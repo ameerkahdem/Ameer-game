@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <title>لعبة الجاسوس</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="container">
+
+    <h1>🎭 لعبة الجاسوس</h1>
+
+    <div id="home">
+        <button onclick="createRoom()">إنشاء غرفة</button>
+
+        <h3>أدخل كود الغرفة</h3>
+        <input id="joinCode" placeholder="الكود">
+        <button onclick="joinRoom()">دخول الغرفة</button>
+    </div>
+
+    <div id="room" style="display:none">
+        <h2>غرفة رقم: <span id="roomId"></span></h2>
+
+        <h3>اسمك:</h3>
+        <input id="playerName" placeholder="ادخل اسمك">
+        <button onclick="registerPlayer()">تسجيل الدخول</button>
+
+        <div id="playerList"></div>
+
+        <button id="startBtn" onclick="startGame()" style="display:none;">
+            بدء اللعبة
+        </button>
+    </div>
+
+    <div id="game" style="display:none">
+        <h2>نتيجة اللعبة</h2>
+        <p id="yourRole"></p>
+        <p id="theWord"></p>
+    </div>
+
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+<script src="script.js"></script>
+
+</body>
+</html>
