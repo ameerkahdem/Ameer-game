@@ -1,0 +1,112 @@
+// =============== 1) إعداد Firebase ===============
+// ضع إعدادات مشروعك من Firebase هنا 👇
+
+const firebaseConfig = {
+    apiKey: "YOUR_KEY",
+    authDomain: "YOUR_APP.firebaseapp.com",
+    databaseURL: "https://YOUR_APP.firebaseio.com",
+    projectId: "YOUR_APP",
+    storageBucket: "YOUR_APP.appspot.com",
+    messagingSenderId: "0000000000",
+    appId: "1:000:web000"
+};
+
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+
+// =============== 2) متغيرات عامة ===============
+let roomID = "";
+let playerName = "";
+let isHost = false;
+const words = ["مدرسة","هاتف","سيارة","مستشفى","شلال","بصمة","حاسوب","مطعم","مطار","حديقة"];
+
+// =============== 3) إنشاء غرفة ===============
+function createRoom(){
+    roomID = Math.floor(1000 + Math.random() * 9000).toString();
+    isHost = true;
+
+    db.ref("rooms/"+roomID).set({
+        started:false,
+        players:{}
+    });
+
+    showRoom();
+}
+
+// =============== 4) دخول غرفة ===============
+function joinRoom(){
+    const code = document.getElementById("joinCode").value;
+    if(code.length < 4) return alert("الكود غير صحيح");
+    roomID = code;
+    showRoom();
+}
+
+// =============== 5) عرض واجهة الغرفة ===============
+function showRoom(){
+    document.getElementById("home").style.display = "none";
+    document.getElementById("room").style.display = "block";
+    document.getElementById("roomId").innerText = roomID;
+}
+
+// =============== 6) تسجيل اللاعب ===============
+function registerPlayer(){
+    playerName = document.getElementById("playerName").value;
+    if(!playerName) return alert("أدخل اسمك");
+
+    db.ref(`rooms/${roomID}/players/${playerName}`).set({
+        isSpy:false,
+        word:""
+    });
+
+    // المراقبة المباشرة لقائمة اللاعبين
+    db.ref(`rooms/${roomID}/players`).on("value", snap=>{
+        const list = Object.keys(snap.val() || {});
+        document.getElementById("playerList").innerHTML =
+          "<h3>اللاعبون:</h3>" + list.join("<br>");
+
+        if(isHost && list.length > 2)
+            document.getElementById("startBtn").style.display="block";
+    });
+
+    // المراقبة لبداية اللعبة
+    db.ref(`rooms/${roomID}/started`).on("value", snap=>{
+        if(snap.val() === true) {
+            loadGame();
+        }
+    });
+}
+
+// =============== 7) بدء اللعبة (اختيار جاسوس + كلمة) ===============
+function startGame(){
+    db.ref(`rooms/${roomID}/players`).once("value").then(snap=>{
+        const players = Object.keys(snap.val());
+        const spy = players[Math.floor(Math.random() * players.length)];
+        const word = words[Math.floor(Math.random() * words.length)];
+
+        players.forEach(name=>{
+            db.ref(`rooms/${roomID}/players/${name}`).update({
+                isSpy: name === spy,
+                word: word
+            });
+        });
+
+        db.ref(`rooms/${roomID}`).update({ started:true });
+    });
+}
+
+// =============== 8) تحميل النتيجة لكل لاعب ===============
+function loadGame(){
+    document.getElementById("room").style.display="none";
+    document.getElementById("game").style.display="block";
+
+    db.ref(`rooms/${roomID}/players/${playerName}`).once("value").then(snap=>{
+        const data = snap.val();
+        if(data.isSpy){
+            document.getElementById("yourRole").innerText = "❗ أنت الجاسوس";
+            document.getElementById("theWord").innerText = "لا توجد كلمة لك";
+        } else {
+            document.getElementById("yourRole").innerText = "✔ أنت لاعب عادي";
+            document.getElementById("theWord").innerText = "الكلمة: " + data.word;
+        }
+    });
+}
